@@ -17,6 +17,11 @@ def post_donation():
     consumes:
       - multipart/form-data
     parameters:
+      - name: email
+        in: formData
+        type: string
+        required: true
+        description: Correo electronico de quien publica
       - name: title
         in: formData
         type: string
@@ -57,7 +62,7 @@ def post_donation():
       - name: image
         in: formData
         type: file
-        required: false
+        required: true
         description: Imagen del producto (opcional)
     responses:
       201:
@@ -119,6 +124,9 @@ def get_donations():
               id:
                 type: string
                 example: 64a89f1234abcdef5678abcd
+              email:
+                type: string
+                example: myemail@mail.com
               title:
                 type: string
                 example: Ropa en buen estado
@@ -173,6 +181,9 @@ def get_all_donations():
               id:
                 type: string
                 example: 64a89f1234abcdef5678abcd
+              email:
+                type: string
+                example: myemail@mail.com
               title:
                 type: string
                 example: Ropa en buen estado

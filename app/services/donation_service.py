@@ -4,6 +4,7 @@ from app import mongo
 
 def create_donation(data, image_url):
     donation = {
+        "email": data["email"],
         "title": data["title"],
         "description": data["description"],
         "category": data["category"],
@@ -28,6 +29,7 @@ def list_donations(only_available=True):
     return [
         {
             "id": str(d["_id"]),
+            "email": d["email"],
             "title": d["title"],
             "description": d["description"],
             "category": d["category"],
