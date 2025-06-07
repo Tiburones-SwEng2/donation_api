@@ -55,6 +55,7 @@ La API estará disponible en `http://localhost:5000` y la documentación Swagger
 - DELETE donations/<donation_id> - Eliminar una donación
 
 ## Estructura del Proyecto
+```bash
 donations_api/
 ├── app/
 │   ├── __init__.py          # Configuración de la aplicación
@@ -71,6 +72,7 @@ donations_api/
 ├── requirements.txt         # Dependencias
 ├── README.md                # Este archivo
 └── CHANGELOG.md             # Historial de cambios
+```
 
 ## Ejemplos
 Crear una donación:
