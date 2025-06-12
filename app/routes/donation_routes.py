@@ -4,6 +4,7 @@ from app.schemas.donation_schema import validate_donation
 from app.services.donation_service import create_donation
 from app.utils.image_handler import save_image
 from app.services.donation_service import list_donations
+from flask import send_from_directory, current_app
 
 donation_bp = Blueprint('donation', __name__)
 
@@ -270,3 +271,30 @@ def delete_donation_endpoint(donation_id):
     if delete_donation(donation_id):
         return jsonify({"message": "Donación eliminada"}), 200
     return jsonify({"error": "Donación no encontrada"}), 404
+
+
+@donation_bp.route('/uploads/<path:filename>', methods=["GET"])
+def serve_uploaded_file(filename):
+    """
+    Servir archivos subidos (imágenes de donaciones)
+    ---
+    tags:
+      - Donaciones
+    parameters:
+      - name: filename
+        in: path
+        type: string
+        required: true
+        description: Nombre del archivo a servir
+    responses:
+      200:
+        description: Imagen encontrada
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+      404:
+        description: Imagen no encontrada
+    """
+    return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)

@@ -78,11 +78,12 @@ donations_api/
 Crear una donación:
 
 ```bash
-curl -X POST -F "title=Ropa de invierno" -F "description=Variedad de abrigos" -F "category=Ropa" -F "condition=Usado" -F "city=Bogotá" -F "image=@abrigos.jpg" http://localhost:5000/donations
+curl -X POST -F "title=Ropa de invierno" -F "description=Variedad de abrigos" -F "category=Ropa" -F "condition=Usado" -F "city=Bogotá" -F "image=@abrigos.jpg" http://localhost:5000/api/donations
 ```
 
 Listar donaciones disponibles:
 
 ```bash
-curl http://localhost:5000/donations
+curl http://localhost:5000/api/donations
 ```
+
