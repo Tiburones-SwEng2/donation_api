@@ -11,11 +11,9 @@ def create_app():
     app = Flask(__name__)
     load_dotenv()
     app.config["MONGO_URI"] = os.getenv("MONGO_URI", "mongodb://localhost:27017/donationsdb")
-    app.config["UPLOAD_FOLDER"] = "uploads"
-    CORS(app)
+    app.config["UPLOAD_FOLDER"] = os.path.join(os.getcwd(), "uploads")
     mongo.init_app(app)
     Swagger(app)
-    CORS(app)
 
     # Importar y registrar rutas
     from app.routes.donation_routes import donation_bp
