@@ -6,6 +6,7 @@ def create_donation(data, image_url):
     donation = {
         "email": data["email"],
         "title": data["title"],
+        "name": data["name"],
         "description": data["description"],
         "category": data["category"],
         "location": {
@@ -30,6 +31,7 @@ def list_donations(only_available=True):
         {
             "id": str(d["_id"]),
             "email": d["email"],
+            "name": d["name"],
             "title": d["title"],
             "description": d["description"],
             "category": d["category"],
@@ -56,5 +58,17 @@ def toggle_donation_availability(donation_id):
     mongo.db.donations.update_one(
         {"_id": ObjectId(donation_id)},
         {"$set": {"available": not current_state}}
+    )
+    return True
+
+def modify_donation(donation_id, data, image_url):
+    donation = mongo.db.donations.find_one({"_id": ObjectId(donation_id)})
+    data["image_url"] = image_url
+    if not donation:
+        return False
+
+    mongo.db.donations.update_one(
+        {"_id": ObjectId(donation_id)},
+        {"$set": data}
     )
     return True

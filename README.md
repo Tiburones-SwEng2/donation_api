@@ -3,6 +3,7 @@
 API REST construida con Flask y MongoDB para permitir a los donadores registrar productos disponibles para donación.
 
 ## Funcionalidades
+
 - Registro de productos con imagen, categoría y ubicación
 - Base de datos NoSQL (MongoDB)
 - Carga de imágenes
@@ -11,6 +12,7 @@ API REST construida con Flask y MongoDB para permitir a los donadores registrar 
 - Validación de datos según categoría del producto
 
 ## Requisitos
+
 - Python 3.8+
 - MongoDB (local o remoto)
 - Pip
@@ -26,6 +28,7 @@ pip install -r requirements.txt
 ```
 
 ## Configuración
+
 1. Crear un archivo `.env` en la raíz del proyecto con la siguiente configuración:
 
 ```env
@@ -39,6 +42,7 @@ mkdir uploads
 ```
 
 ## Uso
+
 Iniciar la aplicación:
 
 ```bash
@@ -48,13 +52,18 @@ python app.py
 La API estará disponible en `http://localhost:5000` y la documentación Swagger en `http://localhost:5000/apidocs`.
 
 ## Endpoints
+
 - POST /donations - Crear una nueva donación
 - GET /donations - Listar donaciones disponibles
 - GET /donations/all - Listar todas las donaciones (disponibles e inactivas)
 - PUT /donations/<donation_id> - Alternar disponibilidad de una donación
 - DELETE donations/<donation_id> - Eliminar una donación
+- GET donations/user - Listar las donaciones de un usuario
+- PUT donations/user/<donation_id> - Modificar la donacion de un usuario
+- GET uploads/<filename> - Enivar imagen de una donacion
 
 ## Estructura del Proyecto
+
 ```bash
 donations_api/
 ├── app/
@@ -75,15 +84,47 @@ donations_api/
 ```
 
 ## Ejemplos
-Crear una donación:
+
+### Crear una donación
+
+Header:
+
+Authorization: Bearer [Token de acceso]
 
 ```bash
 curl -X POST -F "title=Ropa de invierno" -F "description=Variedad de abrigos" -F "category=Ropa" -F "condition=Usado" -F "city=Bogotá" -F "image=@abrigos.jpg" http://localhost:5000/api/donations
 ```
 
-Listar donaciones disponibles:
+### Listar donaciones disponibles
+
+Header:
+
+Authorization: Bearer [Token de acceso]
 
 ```bash
 curl http://localhost:5000/api/donations
 ```
 
+### Listar las donaciones de un usuario
+
+URL: http://localhost:5000/api/donations/user
+
+Header:
+
+Authorization: Bearer [Token de acceso]
+
+### Modificar la donacion de un usuario
+
+URL: http://localhost:5000/api/donations/user
+
+Header:
+
+Authorization: Bearer [Token de acceso]
+
+Body:
+
+```json
+{
+  "title": "Ropa de verano"
+}
+```

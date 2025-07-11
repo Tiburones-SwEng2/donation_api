@@ -5,10 +5,12 @@ from app.services.donation_service import create_donation
 from app.utils.image_handler import save_image
 from app.services.donation_service import list_donations
 from flask import send_from_directory, current_app
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 donation_bp = Blueprint('donation', __name__)
 
 @donation_bp.route("/donations", methods=["POST"])
+@jwt_required()
 def post_donation():
     """
     Crear una nueva donación
@@ -85,6 +87,7 @@ def post_donation():
             title: Este campo es obligatorio
     """
     data = request.form.to_dict()
+    data["email"] = get_jwt_identity() 
     image = request.files.get("image")
 
     # Ajuste: Valor por defecto para "available"
@@ -108,6 +111,7 @@ def post_donation():
 
 
 @donation_bp.route("/donations", methods=["GET"])
+@jwt_required()
 def get_donations():
     """
      Obtener donaciones disponibles (available = true)
@@ -223,6 +227,7 @@ def get_all_donations():
 
 
 @donation_bp.route("/donations/<donation_id>", methods=["PUT"])
+@jwt_required()
 def update_donation_endpoint(donation_id):
     """
     Alternar disponibilidad de una donación (true <-> false)
@@ -249,6 +254,7 @@ def update_donation_endpoint(donation_id):
     return jsonify({"error": "Donación no encontrada"}), 404
 
 @donation_bp.route("/donations/<donation_id>", methods=["DELETE"])
+@jwt_required()
 def delete_donation_endpoint(donation_id):
     """
     Eliminar una donación
@@ -274,6 +280,7 @@ def delete_donation_endpoint(donation_id):
 
 
 @donation_bp.route('/uploads/<path:filename>', methods=["GET"])
+@jwt_required()
 def serve_uploaded_file(filename):
     """
     Servir archivos subidos (imágenes de donaciones)
@@ -298,3 +305,102 @@ def serve_uploaded_file(filename):
         description: Imagen no encontrada
     """
     return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
+
+@donation_bp.route("/donations/user", methods=["GET"])
+@jwt_required()
+def get_user_donations():
+    """
+    Listar las donaciones de un usuario
+    ---
+    tags:
+      - Donaciones
+    parameters:
+      - in : header
+        name: Authorization
+        required: true
+        type: string
+        description: "Formato: Bearer [Token]"
+    responses:
+      200:
+        description: Lista retornada
+    """
+    email = get_jwt_identity()
+    donations = [d for d in list_donations(only_available=False) if d["email"] == email]
+    print(email)
+    return jsonify(donations), 200
+
+@donation_bp.route("/donations/user/<donation_id>", methods=["PUT"])
+@jwt_required()
+def update_user_donation(donation_id):
+    """
+    Modificar una donacion de un usuario
+    ---
+    tags:
+      - Donaciones
+    consumes:
+      - multipart/form-data
+    parameters:
+      - name: Authorization
+        in: header
+        required: true
+        type: string
+        description: "Formato: Bearer [Token]"
+      - name: donation_id
+        in: path
+        type: string
+        required: true
+        description: ID de la donación a modificar
+      - name: title
+        in: formData
+        type: string
+        required: false
+        description: Nombre del articulo a donar
+      - name: description
+        in: formData
+        type: string
+        required: false
+        description: Descripción detallada
+      - name: category
+        in: formData
+        type: string
+        required: false
+        enum: [Ropa, Alimentos, Muebles, Juguetes, Electrodomesticos]
+        description: Categoría del producto
+      - name: condition
+        in: formData
+        type: string
+        required: false
+        enum: [Usado, En perfecto estado, Usado una vez, Nuevo, Perecedero, No perecedero]
+        description: Estado del producto
+      - name: expiration_date
+        in: formData
+        type: string
+        required: false
+        description: Fecha de caducidad en formato YYYY-MM-DD (solo para alimentos)
+      - name: city
+        in: formData
+        type: string
+        required: false
+        description: Ciudad donde se encuentra el producto
+      - name: address
+        in: formData
+        type: string
+        required: false
+        description: Dirección (opcional)
+      - name: image
+        in: formData
+        type: file
+        required: false
+        description: Imagen del producto (opcional)
+    responses:
+      200:
+        description: Lista retornada
+    """
+    from app.services.donation_service import modify_donation
+    image = request.files.get("image")
+    image_url = save_image(image, current_app.config["UPLOAD_FOLDER"]) if image else None
+    success = modify_donation(donation_id, request.form.to_dict(), image_url)
+
+    if success:
+        return jsonify({"message": "Publicacion modificada"}), 200
+    return jsonify({"error": "Donación no encontrada"}), 404
