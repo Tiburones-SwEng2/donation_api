@@ -56,11 +56,21 @@ def post_donation():
     consumes:
       - multipart/form-data
     parameters:
+      - name: Authorization
+        in: header
+        required: true
+        type: string
+        description: "Formato: Bearer [Token]"
       - name: email
         in: formData
         type: string
         required: true
         description: Correo electronico de quien publica
+      - name: name
+        in: formData
+        type: string
+        required: true
+        description: Nombre del donador
       - name: title
         in: formData
         type: string
@@ -155,6 +165,12 @@ def get_donations():
     ---
     tags:
       - Donaciones
+    parameters:
+      - name: Authorization
+        in: header
+        required: true
+        type: string
+        description: "Formato: Bearer [Token]"
     responses:
       200:
         description: Lista de donaciones disponibles
@@ -213,6 +229,12 @@ def get_all_donations():
     ---
     tags:
       - Donaciones
+    parameters:
+      - name: Authorization
+        in: header
+        required: true
+        type: string
+        description: "Formato: Bearer [Token]"
     responses:
       200:
         description: Lista completa de donaciones
@@ -274,6 +296,11 @@ def update_donation_endpoint(donation_id):
     tags:
       - Donaciones
     parameters:
+      - name: Authorization
+        in: header
+        required: true
+        type: string
+        description: "Formato: Bearer [Token]"
       - name: donation_id
         in: path
         type: string
@@ -302,11 +329,17 @@ def delete_donation_endpoint(donation_id):
     tags:
       - Donaciones
     parameters:
+      - name: Authorization
+        in: header
+        required: true
+        type: string
+        description: "Formato: Bearer [Token]"
       - name: donation_id
         in: path
         type: string
         required: true
         description: ID de la donación a eliminar
+      
     responses:
       200:
         description: Donación eliminada exitosamente
@@ -329,6 +362,11 @@ def serve_uploaded_file(filename):
     tags:
       - Donaciones
     parameters:
+      - name: Authorization
+        in: header
+        required: true
+        type: string
+        description: "Formato: Bearer [Token]"
       - name: filename
         in: path
         type: string
