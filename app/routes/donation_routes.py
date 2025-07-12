@@ -1,16 +1,52 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, Flask, send_from_directory
 from flasgger import swag_from, Swagger
 from app.schemas.donation_schema import validate_donation
 from app.services.donation_service import create_donation
 from app.utils.image_handler import save_image
 from app.services.donation_service import list_donations
-from flask import send_from_directory, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from prometheus_client import Counter, Histogram, generate_latest
+import time
+from functools import wraps
+
+app = Flask(__name__)
+
+# MÉTRICAS
+REQUEST_COUNT = Counter('http_requests_total', 'Total Requests', ['method', 'endpoint'])
+REQUEST_LATENCY = Histogram('http_request_duration_seconds', 'Request Latency', ['endpoint'])
+ERROR_COUNT = Counter('http_request_errors_total', 'Total Errors', ['endpoint'])
+
+def monitor_metrics(f):
+    """Decorador para monitorear métricas de Prometheus"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        start_time = time.time()
+        endpoint = request.endpoint or 'unknown'
+        method = request.method
+        
+        # Incrementar contador de requests
+        REQUEST_COUNT.labels(method=method, endpoint=endpoint).inc()
+        
+        try:
+            # Ejecutar la función
+            response = f(*args, **kwargs)
+            return response
+        except Exception as e:
+            # Incrementar contador de errores
+            ERROR_COUNT.labels(endpoint=endpoint).inc()
+            raise
+        finally:
+            # Medir latencia
+            duration = time.time() - start_time
+            REQUEST_LATENCY.labels(endpoint=endpoint).observe(duration)
+    
+    return decorated_function
 
 donation_bp = Blueprint('donation', __name__)
 
 @donation_bp.route("/donations", methods=["POST"])
 @jwt_required()
+@monitor_metrics
 def post_donation():
     """
     Crear una nueva donación
@@ -112,6 +148,7 @@ def post_donation():
 
 @donation_bp.route("/donations", methods=["GET"])
 @jwt_required()
+@monitor_metrics
 def get_donations():
     """
      Obtener donaciones disponibles (available = true)
@@ -169,6 +206,7 @@ def get_donations():
     return jsonify(donations), 200
 
 @donation_bp.route("/donations/all", methods=["GET"])
+@monitor_metrics
 def get_all_donations():
     """
     Obtener todas las donaciones (disponibles e inactivas)
@@ -228,6 +266,7 @@ def get_all_donations():
 
 @donation_bp.route("/donations/<donation_id>", methods=["PUT"])
 @jwt_required()
+@monitor_metrics
 def update_donation_endpoint(donation_id):
     """
     Alternar disponibilidad de una donación (true <-> false)
@@ -255,6 +294,7 @@ def update_donation_endpoint(donation_id):
 
 @donation_bp.route("/donations/<donation_id>", methods=["DELETE"])
 @jwt_required()
+@monitor_metrics
 def delete_donation_endpoint(donation_id):
     """
     Eliminar una donación
@@ -281,6 +321,7 @@ def delete_donation_endpoint(donation_id):
 
 @donation_bp.route('/uploads/<path:filename>', methods=["GET"])
 @jwt_required()
+@monitor_metrics
 def serve_uploaded_file(filename):
     """
     Servir archivos subidos (imágenes de donaciones)
@@ -308,6 +349,7 @@ def serve_uploaded_file(filename):
 
 @donation_bp.route("/donations/user", methods=["GET"])
 @jwt_required()
+@monitor_metrics
 def get_user_donations():
     """
     Listar las donaciones de un usuario
@@ -331,6 +373,7 @@ def get_user_donations():
 
 @donation_bp.route("/donations/user/<donation_id>", methods=["PUT"])
 @jwt_required()
+@monitor_metrics
 def update_user_donation(donation_id):
     """
     Modificar una donacion de un usuario
@@ -404,3 +447,20 @@ def update_user_donation(donation_id):
     if success:
         return jsonify({"message": "Publicacion modificada"}), 200
     return jsonify({"error": "Donación no encontrada"}), 404
+
+@donation_bp.route("/metrics", methods=["GET"])
+def metrics():
+    """
+    Endpoint para exponer métricas de Prometheus
+    ---
+    tags:
+      - Métricas
+    responses:
+      200:
+        description: Métricas de Prometheus
+        content:
+          text/plain:
+            schema:
+              type: string
+    """
+    return generate_latest(), 200, {'Content-Type': 'text/plain; charset=utf-8'}
