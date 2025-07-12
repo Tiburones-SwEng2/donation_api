@@ -47,14 +47,35 @@ def delete_donation(donation_id):
     result = mongo.db.donations.delete_one({"_id": ObjectId(donation_id)})
     return result.deleted_count > 0
 
+def set_donation_availability(donation_id, available):
+    """
+    Explicitly set donation availability (new recommended method)
+    """
+    try:
+        result = mongo.db.donations.update_one(
+            {"_id": ObjectId(donation_id)},
+            {"$set": {"available": available}}
+        )
+        return result.modified_count > 0
+    except:
+        return False
+
 def toggle_donation_availability(donation_id):
+    """
+    Maintained for backward compatibility
+    """
     donation = mongo.db.donations.find_one({"_id": ObjectId(donation_id)})
     if not donation:
         return False
 
     current_state = donation.get("available", True)
-    mongo.db.donations.update_one(
-        {"_id": ObjectId(donation_id)},
-        {"$set": {"available": not current_state}}
-    )
-    return True
+    return set_donation_availability(donation_id, not current_state)
+
+def get_donation_by_id(donation_id):
+    """
+    Retrieve a single donation by its ID
+    """
+    try:
+        return mongo.db.donations.find_one({"_id": ObjectId(donation_id)})
+    except:
+        return None

@@ -30,7 +30,7 @@ def validate_donation(data):
     if category and condition:
         conditions_map = {
             "Alimentos": ["Perecedero", "No perecedero"],
-            "default": ["Usado", "En perfecto estado", "Usado una vez", "Nuevo"]
+            "default": ["Usado", "En perfecto estado", "Usado una vez", "Nuevo", "No aplica"]
         }
         
         valid_conditions = conditions_map.get(category, conditions_map["default"])

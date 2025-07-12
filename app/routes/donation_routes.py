@@ -221,11 +221,10 @@ def get_all_donations():
     donations = list_donations(only_available=False)
     return jsonify(donations), 200
 
-
 @donation_bp.route("/donations/<donation_id>", methods=["PUT"])
 def update_donation_endpoint(donation_id):
     """
-    Alternar disponibilidad de una donación (true <-> false)
+    Toggle availability (maintained for backward compatibility)
     ---
     tags:
       - Donaciones
@@ -243,10 +242,9 @@ def update_donation_endpoint(donation_id):
     """
     from app.services.donation_service import toggle_donation_availability
     success = toggle_donation_availability(donation_id)
-
-    if success:
-        return jsonify({"message": "Estado de disponibilidad actualizado"}), 200
-    return jsonify({"error": "Donación no encontrada"}), 404
+    if not success:
+        return jsonify({"error": "Donation not found"}), 404
+    return jsonify({"message": "Availability toggled"}), 200
 
 @donation_bp.route("/donations/<donation_id>", methods=["DELETE"])
 def delete_donation_endpoint(donation_id):
@@ -271,6 +269,87 @@ def delete_donation_endpoint(donation_id):
     if delete_donation(donation_id):
         return jsonify({"message": "Donación eliminada"}), 200
     return jsonify({"error": "Donación no encontrada"}), 404
+
+@donation_bp.route("/donations/<donation_id>", methods=["GET"])
+def get_single_donation(donation_id):
+    """
+    Get a single donation by ID
+    ---
+    tags:
+      - Donaciones
+    parameters:
+      - name: donation_id
+        in: path
+        type: string
+        required: true
+        description: ID of the donation to retrieve
+    responses:
+      200:
+        description: Donation details
+        schema:
+          type: object
+          properties:
+            id:
+              type: string
+              example: 64a89f1234abcdef5678abcd
+            email:
+              type: string
+              example: myemail@mail.com
+            title:
+              type: string
+              example: Ropa en buen estado
+            description:
+              type: string
+              example: Varias prendas de invierno
+            category:
+              type: string
+              example: Ropa
+            condition:
+              type: string
+              example: Usado
+            expiration_date:
+              type: string
+              format: date
+              example: null
+            available:
+              type: boolean
+              example: true
+            city:
+              type: string
+              example: Cali
+            address:
+              type: string
+              example: null
+            image_url:
+              type: string
+              example: http://localhost:5000/uploads/imagen123.jpg
+            created_at:
+              type: string
+              format: date-time
+              example: 2024-06-02T12:00:00
+      404:
+        description: Donation not found
+    """
+    from app.services.donation_service import get_donation_by_id
+    donation = get_donation_by_id(donation_id)
+    
+    if not donation:
+        return jsonify({"error": "Donación no encontrada"}), 404
+    
+    return jsonify({
+        "id": str(donation["_id"]),
+        "email": donation["email"],
+        "title": donation["title"],
+        "description": donation["description"],
+        "category": donation["category"],
+        "condition": donation["condition"],
+        "expiration_date": donation.get("expiration_date"),
+        "available": donation.get("available", True),
+        "city": donation["location"]["city"],
+        "address": donation["location"].get("address"),
+        "image_url": donation.get("image_url"),
+        "created_at": donation["created_at"].isoformat()
+    }), 200
 
 
 @donation_bp.route('/uploads/<path:filename>', methods=["GET"])
@@ -298,3 +377,43 @@ def serve_uploaded_file(filename):
         description: Imagen no encontrada
     """
     return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
+
+@donation_bp.route("/donations/<donation_id>/availability", methods=["PATCH"])
+def set_availability_endpoint(donation_id):
+    """
+    Explicit availability setter endpoint
+    ---
+    tags:
+      - Donaciones
+    parameters:
+      - name: donation_id
+        in: path
+        required: true
+        type: string
+      - in: body
+        name: available
+        required: true
+        schema:
+          type: object
+          properties:
+            available:
+              type: boolean
+              required: true
+    responses:
+      200:
+        description: Availability updated
+      400:
+        description: Invalid request
+      404:
+        description: Donation not found
+    """
+    data = request.get_json()
+    if not data or 'available' not in data:
+        return jsonify({"error": "Missing availability status"}), 400
+    from app.services.donation_service import set_donation_availability
+    success = set_donation_availability(donation_id, data['available'])
+    if not success:
+        return jsonify({"error": "Donation not found"}), 404
+        
+    return jsonify({"message": "Availability updated"}), 200
+

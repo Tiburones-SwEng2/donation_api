@@ -15,7 +15,6 @@ def create_app():
     mongo.init_app(app)
     Swagger(app)
     CORS(app)
-
     # Importar y registrar rutas
     from app.routes.donation_routes import donation_bp
     app.register_blueprint(donation_bp, url_prefix="/api")
