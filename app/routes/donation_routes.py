@@ -218,13 +218,42 @@ def get_single_donation(donation_id):
     }), 200
 
 @donation_bp.route('/uploads/<path:filename>', methods=["GET"])
-#@jwt_required()
 def serve_uploaded_file(filename):
+    """
+    Servir archivos subidos (imágenes)
+    ---
+    tags:
+      - Donaciones
+    parameters:
+      - name: filename
+        in: path
+        type: string
+        required: true
+        description: Nombre del archivo a servir
+    responses:
+      200:
+        description: Archivo encontrado y servido
+      404:
+        description: Archivo no encontrado
+    """
     return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
 
 @donation_bp.route("/donations/user", methods=["GET"])
 @jwt_required()
 def get_user_donations():
+    """
+    Obtener todas las donaciones del usuario actual
+    ---
+    tags:
+      - Donaciones
+    security:
+      - JWT: []
+    responses:
+      200:
+        description: Lista de donaciones del usuario autenticado
+      401:
+        description: No autorizado - token inválido o no proporcionado
+    """
     email = get_jwt_identity()
     donations = [d for d in list_donations(only_available=False) if d["email"] == email]
     return jsonify(donations), 200
@@ -232,6 +261,71 @@ def get_user_donations():
 @donation_bp.route("/donations/user/<donation_id>", methods=["PUT"])
 @jwt_required()
 def update_user_donation(donation_id):
+    """
+    Modificar una donación del usuario actual
+    ---
+    tags:
+      - Donaciones
+    security:
+      - JWT: []
+    consumes:
+      - multipart/form-data
+    parameters:
+      - name: donation_id
+        in: path
+        type: string
+        required: true
+        description: ID de la donación a modificar
+      - name: title
+        in: formData
+        type: string
+        required: false
+        description: Nuevo título del artículo
+      - name: description
+        in: formData
+        type: string
+        required: false
+        description: Nueva descripción
+      - name: category
+        in: formData
+        type: string
+        required: false
+        enum: [Ropa, Alimentos, Muebles, Juguetes, Electrodomesticos]
+        description: Nueva categoría
+      - name: condition
+        in: formData
+        type: string
+        required: false
+        enum: [Usado, En perfecto estado, Usado una vez, Nuevo, Perecedero, No perecedero]
+        description: Nuevo estado
+      - name: expiration_date
+        in: formData
+        type: string
+        required: false
+        description: Nueva fecha de caducidad (YYYY-MM-DD)
+      - name: city
+        in: formData
+        type: string
+        required: false
+        description: Nueva ciudad
+      - name: address
+        in: formData
+        type: string
+        required: false
+        description: Nueva dirección
+      - name: image
+        in: formData
+        type: file
+        required: false
+        description: Nueva imagen del producto
+    responses:
+      200:
+        description: Donación modificada exitosamente
+      404:
+        description: Donación no encontrada
+      401:
+        description: No autorizado - token inválido o no proporcionado
+    """
     image = request.files.get("image")
     image_url = save_image(image, current_app.config["UPLOAD_FOLDER"]) if image else None
     success = modify_donation(donation_id, request.form.to_dict(), image_url)
@@ -242,6 +336,38 @@ def update_user_donation(donation_id):
 @donation_bp.route("/donations/<donation_id>/availability", methods=["PATCH"])
 @jwt_required()
 def set_availability_endpoint(donation_id):
+    """
+    Establecer disponibilidad de una donación
+    ---
+    tags:
+      - Donaciones
+    security:
+      - JWT: []
+    parameters:
+      - name: donation_id
+        in: path
+        type: string
+        required: true
+        description: ID de la donación
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            available:
+              type: boolean
+              description: Nuevo estado de disponibilidad
+    responses:
+      200:
+        description: Disponibilidad actualizada
+      400:
+        description: Falta el estado de disponibilidad
+      404:
+        description: Donación no encontrada
+      401:
+        description: No autorizado - token inválido o no proporcionado
+    """
     data = request.get_json()
     if not data or 'available' not in data:
         return jsonify({"error": "Missing availability status"}), 400
