@@ -89,7 +89,6 @@ def post_donation():
     """
     data = request.form.to_dict()
     data["email"] = get_jwt_identity()
-    image = request.files.get("image")
 
     # Ajuste: Valor por defecto para "available"
     data["available"] = True
@@ -247,9 +246,9 @@ def update_donation_endpoint(donation_id):
         description: Donación no encontrada
     """
     success = toggle_donation_availability(donation_id)
-    if not success:
-        return jsonify({"error": "Donation not found"}), 404
-    return jsonify({"message": "Availability toggled"}), 200
+    if success:
+        return jsonify({"message": "Estado de disponibilidad actualizado"}), 200
+    return jsonify({"error": "Donación no encontrada"}), 404
 
 @donation_bp.route("/donations/<donation_id>", methods=["DELETE"])
 @jwt_required()
