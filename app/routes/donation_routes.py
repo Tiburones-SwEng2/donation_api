@@ -26,11 +26,6 @@ def post_donation():
         type: string
         required: true
         description: Correo electronico de quien publica
-      - name: name
-        in: formData
-        type: string
-        required: true
-        description: Nombre de quien dona
       - name: title
         in: formData
         type: string
@@ -93,13 +88,12 @@ def post_donation():
             title: Este campo es obligatorio
     """
     data = request.form.to_dict()
-    data["email"] = get_jwt_identity() 
+    data["email"] = get_jwt_identity()
     image = request.files.get("image")
 
     # Ajuste: Valor por defecto para "available"
     data["available"] = True
     data["expiration_date"] = data.get("expiration_date")
-    data["name"] = data.get("name")
 
     city = data.pop("city", "").strip()
     address = data.pop("address", None)
@@ -107,6 +101,7 @@ def post_donation():
         address = address.strip()
     data["location"] = {"city": city, "address": address}
 
+    # Validar con función existente
     errors = validate_donation(data)
     if errors:
         return jsonify(errors), 400
@@ -349,7 +344,6 @@ def get_single_donation(donation_id):
     }), 200
 
 @donation_bp.route('/uploads/<path:filename>', methods=["GET"])
-@jwt_required()
 def serve_uploaded_file(filename):
     """
     Servir archivos subidos (imágenes de donaciones)
@@ -465,7 +459,6 @@ def update_user_donation(donation_id):
       200:
         description: Lista retornada
     """
-    from app.services.donation_service import modify_donation
     image = request.files.get("image")
     image_url = save_image(image, current_app.config["UPLOAD_FOLDER"]) if image else None
     success = modify_donation(donation_id, request.form.to_dict(), image_url)
