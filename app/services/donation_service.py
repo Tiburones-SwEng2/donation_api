@@ -6,6 +6,7 @@ def create_donation(data, image_url):
     donation = {
         "email": data["email"],
         "title": data["title"],
+        "name": data["name"],
         "description": data["description"],
         "category": data["category"],
         "location": {
@@ -31,6 +32,7 @@ def list_donations(only_available=True):
             "id": str(d["_id"]),
             "email": d["email"],
             "title": d["title"],
+            "name": d["name"],
             "description": d["description"],
             "category": d["category"],
             "condition": d["condition"],
@@ -49,7 +51,7 @@ def delete_donation(donation_id):
 
 def set_donation_availability(donation_id, available):
     """
-    Explicitly set donation availability (new recommended method)
+    Explicitly set donation availability
     """
     try:
         result = mongo.db.donations.update_one(
@@ -61,15 +63,28 @@ def set_donation_availability(donation_id, available):
         return False
 
 def toggle_donation_availability(donation_id):
-    """
-    Maintained for backward compatibility
-    """
     donation = mongo.db.donations.find_one({"_id": ObjectId(donation_id)})
     if not donation:
         return False
 
     current_state = donation.get("available", True)
-    return set_donation_availability(donation_id, not current_state)
+    mongo.db.donations.update_one(
+        {"_id": ObjectId(donation_id)},
+        {"$set": {"available": not current_state}}
+    )
+    return True
+
+def modify_donation(donation_id, data, image_url):
+    donation = mongo.db.donations.find_one({"_id": ObjectId(donation_id)})
+    data["image_url"] = image_url
+    if not donation:
+        return False
+
+    mongo.db.donations.update_one(
+        {"_id": ObjectId(donation_id)},
+        {"$set": data}
+    )
+    return True
 
 def get_donation_by_id(donation_id):
     """
@@ -79,3 +94,11 @@ def get_donation_by_id(donation_id):
         return mongo.db.donations.find_one({"_id": ObjectId(donation_id)})
     except:
         return None
+    
+def delete_all_donations():
+    """
+    Elimina todas las donaciones en la base de datos.
+    Retorna el número de documentos eliminados.
+    """
+    result = mongo.db.donations.delete_many({})
+    return result.deleted_count

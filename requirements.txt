@@ -7,3 +7,4 @@ flask-cors==4.0.0
 markupsafe==2.1.3
 python-dotenv
 bson
+flask_jwt_extended
