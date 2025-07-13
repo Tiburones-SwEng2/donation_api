@@ -232,7 +232,7 @@ def get_all_donations():
 @jwt_required()
 def update_donation_endpoint(donation_id):
     """
-    Toggle availability (maintained for backward compatibility)
+    Alternar disponibilidad de una donación (true <-> false)
     ---
     tags:
       - Donaciones
@@ -293,6 +293,35 @@ def get_single_donation(donation_id):
     responses:
       200:
         description: Donation details
+        schema:
+          type: object
+          properties:
+            id:
+              type: string
+            email:
+              type: string
+            name:
+              type: string
+            title:
+              type: string
+            description:
+              type: string
+            category:
+              type: string
+            condition:
+              type: string
+            expiration_date:
+              type: string
+            available:
+              type: boolean
+            city:
+              type: string
+            address:
+              type: string
+            image_url:
+              type: string
+            created_at:
+              type: string
       404:
         description: Donation not found
     """
@@ -319,7 +348,7 @@ def get_single_donation(donation_id):
 @donation_bp.route('/uploads/<path:filename>', methods=["GET"])
 def serve_uploaded_file(filename):
     """
-    Servir archivos subidos (imágenes)
+    Servir archivos subidos (imágenes de donaciones)
     ---
     tags:
       - Donaciones
@@ -331,9 +360,14 @@ def serve_uploaded_file(filename):
         description: Nombre del archivo a servir
     responses:
       200:
-        description: Archivo encontrado y servido
+        description: Imagen encontrada
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
       404:
-        description: Archivo no encontrado
+        description: Imagen no encontrada
     """
     return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
 
@@ -486,6 +520,12 @@ def delete_all():
     responses:
       200:
         description: Todas las donaciones han sido eliminadas
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "5 donaciones eliminadas"
     """
     count = delete_all_donations()
     return jsonify({"message": f"{count} donaciones eliminadas"}), 200
