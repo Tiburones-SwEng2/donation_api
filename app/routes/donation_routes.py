@@ -5,10 +5,10 @@ from app.services.donation_service import (
     create_donation, list_donations, toggle_donation_availability,
     delete_donation, get_donation_by_id, modify_donation, set_donation_availability, delete_all_donations
 )
-from app.utils.image_handler import save_image
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from app.utils.image_handler import save_image
 
-donation_bp = Blueprint('donation', __name__)
+donation_bp = Blueprint('donation', __name__) 
 
 @donation_bp.route("/donations", methods=["POST"])
 @jwt_required()
@@ -93,7 +93,9 @@ def post_donation():
             title: Este campo es obligatorio
     """
     data = request.form.to_dict()
-    data["email"] = get_jwt_identity() 
+    image = request.files.get("image")
+
+    # Ajuste: Valor por defecto para "available"
     data["available"] = True
     data["expiration_date"] = data.get("expiration_date")
     data["name"] = data.get("name")
@@ -375,35 +377,41 @@ def serve_uploaded_file(filename):
 @jwt_required()
 def get_user_donations():
     """
-    Obtener todas las donaciones del usuario actual
+    Listar las donaciones de un usuario
     ---
     tags:
       - Donaciones
-    security:
-      - JWT: []
+    parameters:
+      - in : header
+        name: Authorization
+        required: true
+        type: string
+        description: "Formato: Bearer [Token]"
     responses:
       200:
-        description: Lista de donaciones del usuario autenticado
-      401:
-        description: No autorizado - token inválido o no proporcionado
+        description: Lista retornada
     """
     email = get_jwt_identity()
     donations = [d for d in list_donations(only_available=False) if d["email"] == email]
+    print(email)
     return jsonify(donations), 200
 
 @donation_bp.route("/donations/user/<donation_id>", methods=["PUT"])
 @jwt_required()
 def update_user_donation(donation_id):
     """
-    Modificar una donación del usuario actual
+    Modificar una donacion de un usuario
     ---
     tags:
       - Donaciones
-    security:
-      - JWT: []
     consumes:
       - multipart/form-data
     parameters:
+      - name: Authorization
+        in: header
+        required: true
+        type: string
+        description: "Formato: Bearer [Token]"
       - name: donation_id
         in: path
         type: string
@@ -413,55 +421,53 @@ def update_user_donation(donation_id):
         in: formData
         type: string
         required: false
-        description: Nuevo título del artículo
+        description: Nombre del articulo a donar
       - name: description
         in: formData
         type: string
         required: false
-        description: Nueva descripción
+        description: Descripción detallada
       - name: category
         in: formData
         type: string
         required: false
         enum: [Ropa, Alimentos, Muebles, Juguetes, Electrodomesticos]
-        description: Nueva categoría
+        description: Categoría del producto
       - name: condition
         in: formData
         type: string
         required: false
         enum: [Usado, En perfecto estado, Usado una vez, Nuevo, Perecedero, No perecedero]
-        description: Nuevo estado
+        description: Estado del producto
       - name: expiration_date
         in: formData
         type: string
         required: false
-        description: Nueva fecha de caducidad (YYYY-MM-DD)
+        description: Fecha de caducidad en formato YYYY-MM-DD (solo para alimentos)
       - name: city
         in: formData
         type: string
         required: false
-        description: Nueva ciudad
+        description: Ciudad donde se encuentra el producto
       - name: address
         in: formData
         type: string
         required: false
-        description: Nueva dirección
+        description: Dirección (opcional)
       - name: image
         in: formData
         type: file
         required: false
-        description: Nueva imagen del producto
+        description: Imagen del producto (opcional)
     responses:
       200:
-        description: Donación modificada exitosamente
-      404:
-        description: Donación no encontrada
-      401:
-        description: No autorizado - token inválido o no proporcionado
+        description: Lista retornada
     """
+    from app.services.donation_service import modify_donation
     image = request.files.get("image")
     image_url = save_image(image, current_app.config["UPLOAD_FOLDER"]) if image else None
     success = modify_donation(donation_id, request.form.to_dict(), image_url)
+
     if success:
         return jsonify({"message": "Publicacion modificada"}), 200
     return jsonify({"error": "Donación no encontrada"}), 404

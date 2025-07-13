@@ -31,6 +31,7 @@ def list_donations(only_available=True):
         {
             "id": str(d["_id"]),
             "email": d["email"],
+            "name": d["name"],
             "title": d["title"],
             "name": d["name"],
             "description": d["description"],
