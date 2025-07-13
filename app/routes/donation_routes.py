@@ -93,6 +93,7 @@ def post_donation():
             title: Este campo es obligatorio
     """
     data = request.form.to_dict()
+    data["email"] = get_jwt_identity() 
     image = request.files.get("image")
 
     # Ajuste: Valor por defecto para "available"
@@ -348,6 +349,7 @@ def get_single_donation(donation_id):
     }), 200
 
 @donation_bp.route('/uploads/<path:filename>', methods=["GET"])
+@jwt_required()
 def serve_uploaded_file(filename):
     """
     Servir archivos subidos (imágenes de donaciones)
