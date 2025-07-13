@@ -85,7 +85,6 @@ def modify_donation(donation_id, data, image_url):
         {"_id": ObjectId(donation_id)},
         {"$set": data}
     )
-<<<<<<< HEAD
     return True
 
 def get_donation_by_id(donation_id):
@@ -104,6 +103,5 @@ def delete_all_donations():
     """
     result = mongo.db.donations.delete_many({})
     return result.deleted_count
-=======
-    return True
->>>>>>> 6dc98d567ac6517aee9fa2e783074ea901bdfb08
+
+
