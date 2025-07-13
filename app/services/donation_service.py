@@ -103,4 +103,3 @@ def delete_all_donations():
     result = mongo.db.donations.delete_many({})
     return result.deleted_count
 
-
