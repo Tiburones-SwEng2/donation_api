@@ -76,8 +76,21 @@ def post_donation():
     responses:
       201:
         description: Donación creada exitosamente
+        schema:
+          type: object
+          properties:
+            id:
+              type: string
+              example: 64a89f1234abcdef5678abcd
+            message:
+              type: string
+              example: Donación creada
       400:
         description: Errores de validación
+        schema:
+          type: object
+          example:
+            title: Este campo es obligatorio
     """
     data = request.form.to_dict()
     data["email"] = get_jwt_identity() 
@@ -111,6 +124,49 @@ def get_donations():
     responses:
       200:
         description: Lista de donaciones disponibles
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: 64a89f1234abcdef5678abcd
+              email:
+                type: string
+                example: myemail@mail.com
+              title:
+                type: string
+                example: Ropa en buen estado
+              description:
+                type: string
+                example: Varias prendas de invierno
+              category:
+                type: string
+                example: Ropa
+              condition:
+                type: string
+                example: Usado
+              expiration_date:
+                type: string
+                format: date
+                example: Null
+              available:
+                type: boolean
+                example: true
+              city:
+                type: string
+                example: Cali
+              address:
+                type: string
+                example: Null
+              image_url:
+                type: string
+                example: http://localhost:5000/uploads/imagen123.jpg
+              created_at:
+                type: string
+                format: date-time
+                example: 2024-06-02T12:00:00
     """
     donations = list_donations(only_available=True)
     return jsonify(donations), 200
@@ -125,6 +181,49 @@ def get_all_donations():
     responses:
       200:
         description: Lista completa de donaciones
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: 64a89f1234abcdef5678abcd
+              email:
+                type: string
+                example: myemail@mail.com
+              title:
+                type: string
+                example: Ropa en buen estado
+              description:
+                type: string
+                example: Varias prendas de invierno
+              category:
+                type: string
+                example: Ropa
+              condition:
+                type: string
+                example: Usado
+              expiration_date:
+                type: string
+                format: date
+                example: Null
+              available:
+                type: boolean
+                example: false
+              city:
+                type: string
+                example: Cali
+              address:
+                type: string
+                example: Null
+              image_url:
+                type: string
+                example: http://localhost:5000/uploads/imagen123.jpg
+              created_at:
+                type: string
+                format: date-time
+                example: 2024-06-02T12:00:00
     """
     donations = list_donations(only_available=False)
     return jsonify(donations), 200
