@@ -89,6 +89,7 @@ def post_donation():
     """
     data = request.form.to_dict()
     data["email"] = get_jwt_identity()
+    image = request.files.get("image")
 
     # Ajuste: Valor por defecto para "available"
     data["available"] = True
@@ -105,7 +106,6 @@ def post_donation():
     if errors:
         return jsonify(errors), 400
 
-    image = request.files.get("image")
     image_url = save_image(image, current_app.config["UPLOAD_FOLDER"]) if image else None
     result = create_donation(data, image_url)
     return jsonify(result), 201
