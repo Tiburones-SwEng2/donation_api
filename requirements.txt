@@ -8,3 +8,5 @@ markupsafe==2.1.3
 python-dotenv
 prometheus_client
 flask_jwt_extended
+bson
+flask_jwt_extended

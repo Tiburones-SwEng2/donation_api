@@ -42,7 +42,7 @@ def monitor_metrics(f):
     
     return decorated_function
 
-donation_bp = Blueprint('donation', __name__)
+donation_bp = Blueprint('donation', __name__) 
 
 @donation_bp.route("/donations", methods=["POST"])
 @jwt_required()
@@ -138,12 +138,12 @@ def post_donation():
 
     # Ajuste: Valor por defecto para "available"
     data["available"] = True
-    data["expiration_date"] = data.get("expiration_date")  # puede ser None si no viene
+    data["expiration_date"] = data.get("expiration_date")
 
     city = data.pop("city", "").strip()
     address = data.pop("address", None)
     if address:
-      address = address.strip()
+        address = address.strip()
     data["location"] = {"city": city, "address": address}
 
     # Validar con función existente
@@ -154,7 +154,6 @@ def post_donation():
     image_url = save_image(image, current_app.config["UPLOAD_FOLDER"]) if image else None
     result = create_donation(data, image_url)
     return jsonify(result), 201
-
 
 @donation_bp.route("/donations", methods=["GET"])
 @jwt_required()
@@ -285,7 +284,6 @@ def get_all_donations():
     donations = list_donations(only_available=False)
     return jsonify(donations), 200
 
-
 @donation_bp.route("/donations/<donation_id>", methods=["PUT"])
 @jwt_required()
 @monitor_metrics
@@ -312,9 +310,7 @@ def update_donation_endpoint(donation_id):
       404:
         description: Donación no encontrada
     """
-    from app.services.donation_service import toggle_donation_availability
     success = toggle_donation_availability(donation_id)
-
     if success:
         return jsonify({"message": "Estado de disponibilidad actualizado"}), 200
     return jsonify({"error": "Donación no encontrada"}), 404
@@ -346,11 +342,77 @@ def delete_donation_endpoint(donation_id):
       404:
         description: Donación no encontrada
     """
-    from app.services.donation_service import delete_donation
     if delete_donation(donation_id):
         return jsonify({"message": "Donación eliminada"}), 200
     return jsonify({"error": "Donación no encontrada"}), 404
 
+@donation_bp.route("/donations/<donation_id>", methods=["GET"])
+def get_single_donation(donation_id):
+    """
+    Get a single donation by ID
+    ---
+    tags:
+      - Donaciones
+    parameters:
+      - name: donation_id
+        in: path
+        type: string
+        required: true
+        description: ID of the donation to retrieve
+    responses:
+      200:
+        description: Donation details
+        schema:
+          type: object
+          properties:
+            id:
+              type: string
+            email:
+              type: string
+            name:
+              type: string
+            title:
+              type: string
+            description:
+              type: string
+            category:
+              type: string
+            condition:
+              type: string
+            expiration_date:
+              type: string
+            available:
+              type: boolean
+            city:
+              type: string
+            address:
+              type: string
+            image_url:
+              type: string
+            created_at:
+              type: string
+      404:
+        description: Donation not found
+    """
+    donation = get_donation_by_id(donation_id)
+    if not donation:
+        return jsonify({"error": "Donación no encontrada"}), 404
+
+    return jsonify({
+        "id": str(donation["_id"]),
+        "email": donation["email"],
+        "name": donation["name"],
+        "title": donation["title"],
+        "description": donation["description"],
+        "category": donation["category"],
+        "condition": donation["condition"],
+        "expiration_date": donation.get("expiration_date"),
+        "available": donation.get("available", True),
+        "city": donation["location"]["city"],
+        "address": donation["location"].get("address"),
+        "image_url": donation.get("image_url"),
+        "created_at": donation["created_at"].isoformat()
+    }), 200
 
 @donation_bp.route('/uploads/<path:filename>', methods=["GET"])
 @jwt_required()
@@ -477,7 +539,6 @@ def update_user_donation(donation_id):
       200:
         description: Lista retornada
     """
-    from app.services.donation_service import modify_donation
     image = request.files.get("image")
     image_url = save_image(image, current_app.config["UPLOAD_FOLDER"]) if image else None
     success = modify_donation(donation_id, request.form.to_dict(), image_url)
@@ -485,6 +546,7 @@ def update_user_donation(donation_id):
     if success:
         return jsonify({"message": "Publicacion modificada"}), 200
     return jsonify({"error": "Donación no encontrada"}), 404
+
 
 @donation_bp.route("/metrics", methods=["GET"])
 def metrics():
@@ -502,3 +564,67 @@ def metrics():
               type: string
     """
     return generate_latest(), 200, {'Content-Type': 'text/plain; charset=utf-8'}
+=======
+@donation_bp.route("/donations/<donation_id>/availability", methods=["PATCH"])
+@jwt_required()
+def set_availability_endpoint(donation_id):
+    """
+    Establecer disponibilidad de una donación
+    ---
+    tags:
+      - Donaciones
+    security:
+      - JWT: []
+    parameters:
+      - name: donation_id
+        in: path
+        type: string
+        required: true
+        description: ID de la donación
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            available:
+              type: boolean
+              description: Nuevo estado de disponibilidad
+    responses:
+      200:
+        description: Disponibilidad actualizada
+      400:
+        description: Falta el estado de disponibilidad
+      404:
+        description: Donación no encontrada
+      401:
+        description: No autorizado - token inválido o no proporcionado
+    """
+    data = request.get_json()
+    if not data or 'available' not in data:
+        return jsonify({"error": "Missing availability status"}), 400
+    success = set_donation_availability(donation_id, data['available'])
+    if not success:
+        return jsonify({"error": "Donation not found"}), 404
+    return jsonify({"message": "Availability updated"}), 200
+
+@donation_bp.route("/donations/all", methods=["DELETE"])
+@jwt_required()
+def delete_all():
+    """
+    Eliminar todas las donaciones (uso restringido)
+    ---
+    tags:
+      - Donaciones
+    responses:
+      200:
+        description: Todas las donaciones han sido eliminadas
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "5 donaciones eliminadas"
+    """
+    count = delete_all_donations()
+    return jsonify({"message": f"{count} donaciones eliminadas"}), 200
